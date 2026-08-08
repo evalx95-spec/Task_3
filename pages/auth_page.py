@@ -1,18 +1,11 @@
 import allure
 from pages.base_page import BasePage
 from locators.auth_page_lct import AuthPageLocators
-from locators.main_page_lct import MainPageLocators
 from data import TestData
 
 
 class AuthPage(BasePage):
     
-    @allure.step('Кликнуть на кнопку "Войти в аккаунт"')
-    def click_login_account_button(self):
-        
-        self.check_element_displayed(MainPageLocators.PROFILE_BUTTON)
-        self.click_on_element(MainPageLocators.PROFILE_BUTTON)
-
     @allure.step('Заполнить поле "Email" значением: {email}')
     def input_email_field(self, email):
         
@@ -35,17 +28,15 @@ class AuthPage(BasePage):
     @allure.step('Выполнить авторизацию пользователя {email}')
     def login(self, email, password):
         
-        self.click_login_account_button()
         self.input_email_field(email)
         self.set_password_field(password)
         self.click_login_button()
-        return self.check_element_displayed(MainPageLocators.CONFIRM_ORDER_BUTTON)
 
     @allure.step('Авторизация как существующий пользователь')
     def login_as_existing_user(self):
         
         user_data = TestData.EXISTING_USER
-        return self.login(user_data['email'], user_data['password'])
+        self.login(user_data['email'], user_data['password'])
 
     @allure.step('Проверить отображение кнопки "Войти"')
     def is_login_button_displayed(self):
@@ -83,8 +74,3 @@ class AuthPage(BasePage):
     def clear_password_field(self):
         
         self.clear_field(AuthPageLocators.PASSWORD_INPUT)
-
-    @allure.step('Ожидание загрузки страницы после авторизации')
-    def wait_for_login_complete(self):
-        
-        return self.check_element_displayed(MainPageLocators.CONFIRM_ORDER_BUTTON)

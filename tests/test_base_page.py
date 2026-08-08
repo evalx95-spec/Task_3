@@ -1,26 +1,28 @@
 import allure
 import pytest
-from pages.base_page import BasePage
-from config import BASE_URL, ENDPOINTS
+from pages.main_page import MainPage
+from pages.auth_page import AuthPage
+from utils.urls import BASE_URL, Urls  
 
 
-class TestBasePage:
-    
+class TestMainPageNavigation:
+
     @allure.title("Проверка перехода по нажатию кнопки 'Личный кабинет'")
     @allure.description("Проверка, что при клике на кнопку 'Личный кабинет' происходит переход на страницу авторизации")
     @allure.severity(allure.severity_level.CRITICAL)
     def test_click_on_lc_button(self, driver):
-        base_page = BasePage(driver)
-        base_page.open_page()
+        main_page = MainPage(driver)
+        main_page.open_page()
         
-        assert base_page.check_element_displayed(BasePage.PROFILE_BUTTON_LOCATOR), \
+        assert main_page.is_profile_button_displayed(), \
             "Кнопка 'Личный кабинет' не отображается на странице"
         
-        base_page.click_on_element(BasePage.PROFILE_BUTTON_LOCATOR)
+        main_page.click_profile_button()
         
-        current_url = base_page.get_current_url()
+        auth_page = AuthPage(driver)
+        current_url = auth_page.get_current_url()
         
-        assert "login" in current_url.lower() or "auth" in current_url.lower(), \
+        assert Urls.LOGIN in current_url.lower(), \
             f"Ожидался переход на страницу логина, получен URL: {current_url}"
         
         allure.attach(current_url, name="Текущий URL", attachment_type=allure.attachment_type.TEXT)
@@ -29,15 +31,15 @@ class TestBasePage:
     @allure.description("Проверка, что при клике на кнопку 'Конструктор' происходит переход на главную страницу")
     @allure.severity(allure.severity_level.NORMAL)
     def test_click_on_constructor_button(self, driver):
-        base_page = BasePage(driver)
-        base_page.open_page()
+        main_page = MainPage(driver)
+        main_page.open_page()
         
-        assert base_page.check_element_displayed(BasePage.CONSTRUCTOR_BUTTON_LOCATOR), \
+        assert main_page.is_constructor_button_displayed(), \
             "Кнопка 'Конструктор' не отображается на странице"
         
-        base_page.click_on_element(BasePage.CONSTRUCTOR_BUTTON_LOCATOR)
+        main_page.click_constructor_button()
         
-        current_url = base_page.get_current_url()
+        current_url = main_page.get_current_url()
         
         assert BASE_URL in current_url, f"Ожидался {BASE_URL}, получен {current_url}"
         
@@ -47,17 +49,17 @@ class TestBasePage:
     @allure.description("Проверка, что при клике на 'Лента заказов' происходит переход на страницу с заказами")
     @allure.severity(allure.severity_level.NORMAL)
     def test_click_on_feed_button(self, driver):
-        base_page = BasePage(driver)
-        base_page.open_page()
+        main_page = MainPage(driver)
+        main_page.open_page()
         
-        assert base_page.check_element_displayed(BasePage.FEED_BUTTON_LOCATOR), \
+        assert main_page.is_feed_button_displayed(), \
             "Кнопка 'Лента заказов' не отображается на странице"
         
-        base_page.click_on_element(BasePage.FEED_BUTTON_LOCATOR)
+        main_page.click_feed_button()
         
-        current_url = base_page.get_current_url()
+        current_url = main_page.get_current_url()
         
-        assert "feed" in current_url.lower() or "orders" in current_url.lower(), \
+        assert Urls.FEED in current_url.lower(), \
             f"Ожидался переход на страницу заказов, получен URL: {current_url}"
         
         allure.attach(current_url, name="Текущий URL", attachment_type=allure.attachment_type.TEXT)
