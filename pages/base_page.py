@@ -153,49 +153,13 @@ class BasePage:
 
     
     
-    @allure.step('Drag-and-drop элемента {source_locator} на {target_locator}')
+    @allure.step('Выполнить drag-and-drop ингредиента с помощью JavaScript событий описанных выше, т.к. geckodriver (Firefox) синтезирует перемещения указателя, которые браузер не превращает в нативный drag, поэтому drop не наступает и кнопка выглядит "неотпущенной".')
     def drag_and_drop_on_element(self, source_locator, target_locator):
-        
         source = self.wait.until(EC.element_to_be_clickable(source_locator))
         target = self.wait.until(EC.visibility_of_element_located(target_locator))
         self.scroll_to_element(target)
         self.scroll_to_element(source)
-        
-        script = """
-            const source = arguments[0];
-            const target = arguments[1];
-            const dataTransfer = new DataTransfer();
-            
-            function fire(element, type, coords) {
-                element.dispatchEvent(new DragEvent(type, Object.assign({
-                    bubbles: true,
-                    cancelable: true,
-                    composed: true,
-                    dataTransfer: dataTransfer
-                }, coords)));
-            }
-            
-            function centerOf(element) {
-                const rect = element.getBoundingClientRect();
-                return {
-                    clientX: rect.left + rect.width / 2,
-                    clientY: rect.top + rect.height / 2
-                };
-            }
-            
-            const from = centerOf(source);
-            const to = centerOf(target);
-            
-            fire(source, 'dragstart', from);
-            fire(target, 'dragenter', to);
-            fire(target, 'dragover', to);
-            fire(target, 'drop', to);
-            fire(source, 'dragend', to);
-        """
-        self.driver.execute_script(script, source, target)
-        
-        import time
-        time.sleep(0.5)
+        self.driver.execute_script(self.HTML5_DND_SCRIPT, source, target)
 
   
     

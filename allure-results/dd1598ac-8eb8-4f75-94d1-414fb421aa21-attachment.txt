@@ -1,4 +1,0 @@
-Browser: chrome
-Headless: False
-Base URL: https://qa-stellarburgers.education-services.ru
-Timeout: 10
