@@ -1,170 +1,239 @@
 import allure
-from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
-
-from config import DEFAULT_TIMEOUT
-from utils.urls import BASE_URL  
-from locators.base_page_lct import BasePageLocators
+from selenium.common.exceptions import TimeoutException, NoSuchElementException, InvalidArgumentException
+from selenium.webdriver.common.action_chains import ActionChains
+from utils.urls import BASE_URL
 
 
 class BasePage:
-    """Базовый класс для всех Page Object классов."""
     
-    def __init__(self, driver: WebDriver):
+    def __init__(self, driver, base_url=None):
         self.driver = driver
-        self.wait = WebDriverWait(driver, DEFAULT_TIMEOUT or 10)
-        self.locators = BasePageLocators()
-
-    
-    @allure.step('Переход на страницу: {url}')
-    def open_page(self, url: str = None):
-       
-        full_url = BASE_URL + url if url else BASE_URL
-        self.driver.get(full_url)
-        self.wait_for_page_load()
-
-    @allure.step('Ожидание загрузки страницы')
-    def wait_for_page_load(self):
-        """Ожидать полной загрузки страницы."""
-        self.wait.until(lambda driver: driver.execute_script("return document.readyState") == "complete")
-
-    @allure.step('Обновление страницы')
-    def refresh_page(self):
-        """Обновить текущую страницу."""
-        self.driver.refresh()
-        self.wait_for_page_load()
-
-    @allure.step('Получение текущего URL страницы')
-    def get_current_url(self) -> str:
-        """Получить URL текущей страницы."""
-        return self.driver.current_url
-
-    @allure.step('Получение заголовка страницы')
-    def get_page_title(self) -> str:
-        """Получить заголовок текущей страницы."""
-        return self.driver.title
-
-    
-    @allure.step('Клик по элементу: {locator}')
-    def click_on_element(self, locator):
-       
-        try:
-            element = self.wait.until(EC.element_to_be_clickable(locator))
-            element.click()
-        except TimeoutException:
-            try:
-                
-                element = self.driver.find_element(*locator)
-                self.driver.execute_script("arguments[0].click();", element)
-            except Exception as e:
-                allure.attach(str(e), name="Ошибка клика", attachment_type=allure.attachment_type.TEXT)
-                raise
-
-    @allure.step('Ввод текста "{text}" в поле: {locator}')
-    def input_text(self, locator, text: str):
         
-        element = self.wait.until(EC.element_to_be_clickable(locator))
+        if base_url is None:
+            self.base_url = BASE_URL
+        else:
+            self.base_url = base_url
+        self.default_timeout = 10
+        self.long_timeout = 20
+    
+    
+    def create_wait(self, timeout=None):
+        """Создать WebDriverWait с указанным или стандартным таймаутом"""
+        if timeout is None:
+            timeout = self.default_timeout
+        return WebDriverWait(self.driver, timeout)
+    
+    def wait_for_element_visible(self, locator, timeout=None):
+        """Ждать, пока элемент станет видимым"""
+        wait = self.create_wait(timeout)
+        return wait.until(EC.visibility_of_element_located(locator))
+    
+    def wait_for_element_present(self, locator, timeout=None):
+        """Ждать, пока элемент появится в DOM"""
+        wait = self.create_wait(timeout)
+        return wait.until(EC.presence_of_element_located(locator))
+    
+    def wait_for_element_clickable(self, locator, timeout=None):
+        """Ждать, пока элемент станет кликабельным"""
+        wait = self.create_wait(timeout)
+        return wait.until(EC.element_to_be_clickable(locator))
+    
+    def wait_for_element_invisible(self, locator, timeout=None):
+        """Ждать, пока элемент исчезнет"""
+        wait = self.create_wait(timeout)
+        return wait.until(EC.invisibility_of_element_located(locator))
+    
+    def wait_for_element_not_present(self, locator, timeout=None):
+        """Ждать, пока элемент исчезнет из DOM"""
+        wait = self.create_wait(timeout)
+        return wait.until_not(EC.presence_of_element_located(locator))
+    
+    def wait_for_condition(self, condition, timeout=None, message=""):
+        """Ждать выполнения произвольного условия"""
+        wait = self.create_wait(timeout)
+        return wait.until(condition, message)
+    
+    def wait_for_page_load(self):
+        """Ждать полной загрузки страницы"""
+        wait = self.create_wait()
+        return wait.until(
+            lambda driver: driver.execute_script("return document.readyState") == "complete"
+        )
+    
+    def wait_for_at_least_n_elements(self, locator, min_count=1, timeout=None):
+        """Ждать, пока количество элементов по локатору не станет >= min_count"""
+        wait = self.create_wait(timeout)
+        
+        def condition(driver):
+            elements = self.find_elements(locator)
+            return len(elements) >= min_count
+        
+        wait.until(condition, f"Количество элементов меньше {min_count}")
+        return self.find_elements(locator)
+    
+    
+    def click_element(self, locator, timeout=None):
+        """Кликнуть по элементу с ожиданием кликабельности"""
+        element = self.wait_for_element_clickable(locator, timeout)
+        element.click()
+        return element
+    
+    def click_via_js(self, element):
+        """Кликнуть через JavaScript"""
+        self.driver.execute_script("arguments[0].click();", element)
+    
+    def input_text(self, locator, text, timeout=None):
+        """Ввести текст в поле с ожиданием видимости"""
+        element = self.wait_for_element_visible(locator, timeout)
         element.clear()
         element.send_keys(text)
-
-    @allure.step('Очистка поля: {locator}')
-    def clear_field(self, locator):
-     
-        element = self.wait.until(EC.element_to_be_clickable(locator))
+        return element
+    
+    def clear_field(self, locator, timeout=None):
+        """Очистить поле ввода"""
+        element = self.wait_for_element_visible(locator, timeout)
         element.clear()
-
-    @allure.step('Получение текста элемента: {locator}')
-    def get_element_text(self, locator) -> str:
-       
-        element = self.find_element(locator)
+        return element
+    
+    def get_text(self, locator, timeout=None):
+        """Получить текст элемента"""
+        element = self.wait_for_element_visible(locator, timeout)
         return element.text
-
-    @allure.step('Получение значения атрибута элемента: {locator}')
-    def get_element_attribute(self, locator, attribute: str) -> str:
-       
-        element = self.find_element(locator)
+    
+    def get_attribute(self, locator, attribute, timeout=None):
+        """Получить значение атрибута элемента"""
+        element = self.wait_for_element_present(locator, timeout)
         return element.get_attribute(attribute)
-
     
-    
-    @allure.step('Нахождение элемента: {locator}')
-    def find_element(self, locator, timeout: int = None):
-      
-        wait = WebDriverWait(self.driver, timeout or DEFAULT_TIMEOUT or 10)
-        return wait.until(EC.presence_of_element_located(locator))
-
-    @allure.step('Нахождение всех элементов: {locator}')
-    def find_all_elements(self, locator, timeout: int = None):
-       
-        wait = WebDriverWait(self.driver, timeout or DEFAULT_TIMEOUT or 10)
-        return wait.until(EC.presence_of_all_elements_located(locator))
-
-    
-    
-    @allure.step('Проверка отображения элемента: {locator}')
-    def check_element_displayed(self, locator, timeout: int = None) -> bool:
-        
+    def get_input_value(self, locator, timeout=None):
+        """Получить значение из поля ввода"""
         try:
-            wait = WebDriverWait(self.driver, timeout or DEFAULT_TIMEOUT or 10)
-            return wait.until(EC.visibility_of_element_located(locator))
+            return self.get_attribute(locator, 'value', timeout) or ""
+        except:
+            return ""
+    
+    
+    def is_element_visible(self, locator, timeout=None) -> bool:
+        """Проверить, отображается ли элемент"""
+        try:
+            self.wait_for_element_visible(locator, timeout)
+            return True
         except TimeoutException:
             return False
-
-    @allure.step('Проверка отсутствия элемента: {locator}')
-    def check_element_not_displayed(self, locator, timeout: int = None) -> bool:
-        
+    
+    def is_element_present(self, locator, timeout=None) -> bool:
+        """Проверить, присутствует ли элемент в DOM"""
         try:
-            wait = WebDriverWait(self.driver, timeout or DEFAULT_TIMEOUT or 10)
-            return wait.until(EC.invisibility_of_element_located(locator))
+            self.wait_for_element_present(locator, timeout)
+            return True
         except TimeoutException:
             return False
-
-    @allure.step('Проверка что элемент активен: {locator}')
-    def is_element_enabled(self, locator) -> bool:
-       
-        try:
-            element = self.find_element(locator)
-            return element.is_enabled()
-        except NoSuchElementException:
-            return False
-
-    @allure.step('Проверка что элемент выбран: {locator}')
-    def is_element_selected(self, locator) -> bool:
-        
-        element = self.find_element(locator)
-        return element.is_selected()
-
     
-    @allure.step('Прокрутка к элементу')
+    def is_element_not_visible(self, locator, timeout=None) -> bool:
+        """Проверить, что элемент не отображается"""
+        try:
+            self.wait_for_element_invisible(locator, timeout)
+            return True
+        except TimeoutException:
+            return False
+    
+    def is_element_not_present(self, locator, timeout=None) -> bool:
+        """Проверить, что элемент отсутствует в DOM"""
+        try:
+            self.wait_for_element_not_present(locator, timeout)
+            return True
+        except TimeoutException:
+            return False
+    
+    
+    def open_page(self, url=None):
+        """Открыть указанную страницу или базовый URL"""
+        target_url = url if url else self.base_url
+        
+        
+        if not target_url:
+            raise ValueError(f"URL не может быть пустым. Переданный URL: {target_url}")
+        
+        
+        if not isinstance(target_url, str):
+            raise TypeError(f"URL должен быть строкой. Получен тип: {type(target_url)}")
+        
+        
+        if target_url.startswith('/'):
+            target_url = BASE_URL + target_url
+        
+       
+        print(f"Открываю страницу: {target_url}")
+        
+        try:
+            self.driver.get(target_url)
+            self.wait_for_page_load()
+        except InvalidArgumentException as e:
+            raise InvalidArgumentException(f"Не удалось открыть URL: {target_url}. Ошибка: {e}")
+    
+    def refresh_page(self):
+        """Обновить страницу"""
+        self.driver.refresh()
+        self.wait_for_page_load()
+    
+    def get_current_url(self) -> str:
+        """Получить текущий URL страницы"""
+        return self.driver.current_url
+    
+   
     def scroll_to_element(self, element):
-        
-        self.driver.execute_script(
-            "arguments[0].scrollIntoView({block: 'center', behavior: 'instant'});", 
-            element
-        )
-
-    @allure.step('Прокрутка к элементу по локатору')
-    def scroll_to_element_by_locator(self, locator):
-        
-        element = self.find_element(locator)
+        """Прокрутить страницу к элементу"""
+        self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
+    
+    def scroll_to_locator(self, locator, timeout=None):
+        """Прокрутить страницу к элементу по локатору"""
+        element = self.wait_for_element_present(locator, timeout)
         self.scroll_to_element(element)
-
+        return element
     
     
-    @allure.step('Выполнить drag-and-drop ингредиента с помощью JavaScript событий описанных выше, т.к. geckodriver (Firefox) синтезирует перемещения указателя, которые браузер не превращает в нативный drag, поэтому drop не наступает и кнопка выглядит "неотпущенной".')
+    def find_element(self, locator, timeout=None):
+        """Найти элемент"""
+        return self.wait_for_element_present(locator, timeout)
+    
+    def find_elements(self, locator):
+        """Найти все элементы по локатору"""
+        return self.driver.find_elements(*locator)
+    
+    def get_element_count(self, locator):
+        """Получить количество элементов по локатору"""
+        return len(self.find_elements(locator))
+    
     def drag_and_drop_on_element(self, source_locator, target_locator):
-        source = self.wait.until(EC.element_to_be_clickable(source_locator))
-        target = self.wait.until(EC.visibility_of_element_located(target_locator))
-        self.scroll_to_element(target)
-        self.scroll_to_element(source)
-        self.driver.execute_script(self.HTML5_DND_SCRIPT, source, target)
-
-  
+        """Перетащить элемент"""
+        source = self.wait_for_element_visible(source_locator)
+        target = self.wait_for_element_visible(target_locator)
+        actions = ActionChains(self.driver)
+        actions.drag_and_drop(source, target).perform()
     
-    @allure.step('Скриншот страницы')
-    def take_screenshot(self, name: str = "screenshot"):
-        
-        screenshot = self.driver.get_screenshot_as_png()
-        allure.attach(screenshot, name=name, attachment_type=allure.attachment_type.PNG)
+    
+    def clear_local_storage(self):
+        """Очистить localStorage браузера"""
+        self.driver.execute_script("window.localStorage.clear();")
+    
+    
+    def get_active_element(self):
+        """Получить активный элемент на странице"""
+        return self.driver.switch_to.active_element
+    
+    def is_element_active(self, locator, timeout=None) -> bool:
+        """Проверить, является ли элемент активным"""
+        element = self.wait_for_element_present(locator, timeout)
+        active_element = self.get_active_element()
+        return element == active_element
+    
+    
+    def assert_element_visible(self, locator, message="Элемент не отображается"):
+        """Проверить, что элемент отображается, иначе выбросить AssertionError"""
+        assert self.is_element_visible(locator), message
+    
+    def assert_element_not_visible(self, locator, message="Элемент отображается"):
+        """Проверить, что элемент не отображается, иначе выбросить AssertionError"""
+        assert self.is_element_not_visible(locator), message

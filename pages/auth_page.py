@@ -5,72 +5,48 @@ from data import TestData
 
 
 class AuthPage(BasePage):
-    
+
     @allure.step('Заполнить поле "Email" значением: {email}')
     def input_email_field(self, email):
-        
-        self.check_element_displayed(AuthPageLocators.EMAIL_INPUT)  
-        self.click_on_element(AuthPageLocators.EMAIL_INPUT)         
-        self.input_text(AuthPageLocators.EMAIL_INPUT, email)        
+        self.assert_element_visible(AuthPageLocators.EMAIL_INPUT, "Поле Email не отображается")
+        self.click_element(AuthPageLocators.EMAIL_INPUT)
+        self.input_text(AuthPageLocators.EMAIL_INPUT, email)
 
     @allure.step('Заполнить поле "Пароль"')
     def set_password_field(self, password):
-        
-        self.check_element_displayed(AuthPageLocators.PASSWORD_INPUT)  
-        self.click_on_element(AuthPageLocators.PASSWORD_INPUT)         
-        self.input_text(AuthPageLocators.PASSWORD_INPUT, password)     
+        self.assert_element_visible(AuthPageLocators.PASSWORD_INPUT, "Поле Пароль не отображается")
+        self.click_element(AuthPageLocators.PASSWORD_INPUT)
+        self.input_text(AuthPageLocators.PASSWORD_INPUT, password)
 
     @allure.step('Нажать кнопку "Войти"')
     def click_login_button(self):
-        
-        self.click_on_element(AuthPageLocators.LOGIN_BUTTON)
+        self.assert_element_visible(AuthPageLocators.LOGIN_BUTTON, "Кнопка Войти не отображается")
+        self.click_element(AuthPageLocators.LOGIN_BUTTON)
 
     @allure.step('Выполнить авторизацию пользователя {email}')
     def login(self, email, password):
-        
         self.input_email_field(email)
         self.set_password_field(password)
         self.click_login_button()
 
     @allure.step('Авторизация как существующий пользователь')
     def login_as_existing_user(self):
-        
         user_data = TestData.EXISTING_USER
         self.login(user_data['email'], user_data['password'])
 
-    @allure.step('Проверить отображение кнопки "Войти"')
-    def is_login_button_displayed(self):
-       
-        return self.check_element_displayed(AuthPageLocators.LOGIN_BUTTON)
-
-    @allure.step('Получить URL текущей страницы')
-    def get_login_url(self):
-        
-        self.check_element_displayed(AuthPageLocators.LOGIN_BUTTON)
-        return self.get_current_url()
-
     @allure.step('Проверить что открыта страница авторизации')
-    def is_auth_page_opened(self):
-        
-        return self.check_element_displayed(AuthPageLocators.LOGIN_BUTTON)
-
-    @allure.step('Проверка открытия страницы логина')
-    def check_login_page_opened(self):
-        
-        return self.check_element_displayed(AuthPageLocators.LOGIN_BUTTON)
+    def is_auth_page_opened(self) -> bool:
+        return self.is_element_visible(AuthPageLocators.LOGIN_BUTTON)
 
     @allure.step('Нажать на ссылку "Восстановить пароль"')
     def click_forgot_password_link(self):
-        
-        self.check_element_displayed(AuthPageLocators.FORGOT_PASSWORD_LINK)
-        self.click_on_element(AuthPageLocators.FORGOT_PASSWORD_LINK)
+        self.assert_element_visible(AuthPageLocators.FORGOT_PASSWORD_LINK, "Ссылка 'Восстановить пароль' не отображается")
+        self.click_element(AuthPageLocators.FORGOT_PASSWORD_LINK)
 
     @allure.step('Очистить поле "Email"')
     def clear_email_field(self):
-        
         self.clear_field(AuthPageLocators.EMAIL_INPUT)
 
     @allure.step('Очистить поле "Пароль"')
     def clear_password_field(self):
-        
         self.clear_field(AuthPageLocators.PASSWORD_INPUT)

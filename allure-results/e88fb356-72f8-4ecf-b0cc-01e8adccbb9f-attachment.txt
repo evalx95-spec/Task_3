@@ -1,8 +1,0 @@
-
-=== Test Environment Setup ===
-Browser: chrome
-Headless: False
-Base URL: https://qa-stellarburgers.education-services.ru
-Screenshots dir: C:\Users\E.Kozlova\Desktop\Project\Task_3\screenshots
-===============================
-
