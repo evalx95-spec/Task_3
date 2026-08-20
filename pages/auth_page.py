@@ -8,14 +8,10 @@ class AuthPage(BasePage):
 
     @allure.step('Заполнить поле "Email" значением: {email}')
     def input_email_field(self, email):
-        self.assert_element_visible(AuthPageLocators.EMAIL_INPUT, "Поле Email не отображается")
-        self.click_element(AuthPageLocators.EMAIL_INPUT)
         self.input_text(AuthPageLocators.EMAIL_INPUT, email)
 
     @allure.step('Заполнить поле "Пароль"')
     def set_password_field(self, password):
-        self.assert_element_visible(AuthPageLocators.PASSWORD_INPUT, "Поле Пароль не отображается")
-        self.click_element(AuthPageLocators.PASSWORD_INPUT)
         self.input_text(AuthPageLocators.PASSWORD_INPUT, password)
 
     @allure.step('Нажать кнопку "Войти"')

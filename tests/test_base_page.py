@@ -1,5 +1,4 @@
 import allure
-import pytest
 from pages.main_page import MainPage
 from pages.auth_page import AuthPage
 from utils.urls import BASE_URL, Urls  

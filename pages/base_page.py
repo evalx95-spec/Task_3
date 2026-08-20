@@ -1,7 +1,7 @@
 import allure
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException, InvalidArgumentException
+from selenium.common.exceptions import TimeoutException, InvalidArgumentException
 from selenium.webdriver.common.action_chains import ActionChains
 from utils.urls import BASE_URL
 
@@ -56,7 +56,7 @@ class BasePage:
         return wait.until(condition, message)
     
     def wait_for_page_load(self):
-        """Ждать полной загрузки страницы"""
+        """Ждать полной загрузки страницы (для JS-навигации)"""
         wait = self.create_wait()
         return wait.until(
             lambda driver: driver.execute_script("return document.readyState") == "complete"
@@ -111,7 +111,7 @@ class BasePage:
         """Получить значение из поля ввода"""
         try:
             return self.get_attribute(locator, 'value', timeout) or ""
-        except:
+        except Exception:
             return ""
     
     
@@ -152,31 +152,19 @@ class BasePage:
         """Открыть указанную страницу или базовый URL"""
         target_url = url if url else self.base_url
         
-        
-        if not target_url:
-            raise ValueError(f"URL не может быть пустым. Переданный URL: {target_url}")
-        
-        
-        if not isinstance(target_url, str):
-            raise TypeError(f"URL должен быть строкой. Получен тип: {type(target_url)}")
-        
-        
         if target_url.startswith('/'):
             target_url = BASE_URL + target_url
         
-       
         print(f"Открываю страницу: {target_url}")
         
         try:
             self.driver.get(target_url)
-            self.wait_for_page_load()
         except InvalidArgumentException as e:
             raise InvalidArgumentException(f"Не удалось открыть URL: {target_url}. Ошибка: {e}")
     
     def refresh_page(self):
         """Обновить страницу"""
         self.driver.refresh()
-        self.wait_for_page_load()
     
     def get_current_url(self) -> str:
         """Получить текущий URL страницы"""

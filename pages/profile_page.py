@@ -42,34 +42,17 @@ class ProfilePage(BasePage):
         self.assert_element_visible(ProfilePageLocators.SAVE_BUTTON, "Кнопка «Сохранить» не отображается")
         self.click_element(ProfilePageLocators.SAVE_BUTTON)
 
-    @allure.step('Получение значения поля профиля')
-    def get_profile_field_value(self, locator, field_name, timeout=10) -> str:
-        """Получить значение поля профиля по локатору."""
-        return self.get_input_value(locator, timeout)
-
     @allure.step('Получение имени пользователя')
     def get_user_name(self, timeout=10) -> str:
         """Получить имя пользователя из профиля."""
-        return self.get_profile_field_value(
-            ProfilePageLocators.PROFILE_NAME_INPUT, 
-            "имя", 
-            timeout
-        )
+        return self.get_input_value(ProfilePageLocators.PROFILE_NAME_INPUT, timeout)
 
     @allure.step('Получение email пользователя')
     def get_user_email(self, timeout=10) -> str:
         """Получить email пользователя из профиля."""
-        return self.get_profile_field_value(
-            ProfilePageLocators.PROFILE_EMAIL_INPUT, 
-            "email", 
-            timeout
-        )
+        return self.get_input_value(ProfilePageLocators.PROFILE_EMAIL_INPUT, timeout)
 
     @allure.step('Получение пароля пользователя')
     def get_user_password(self, timeout=10) -> str:
         """Получить пароль пользователя из профиля."""
-        return self.get_profile_field_value(
-            ProfilePageLocators.PROFILE_PASSWORD_INPUT, 
-            "пароль", 
-            timeout
-        )
+        return self.get_input_value(ProfilePageLocators.PROFILE_PASSWORD_INPUT, timeout)

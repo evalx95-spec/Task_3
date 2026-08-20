@@ -1,5 +1,4 @@
 import allure
-import pytest
 from pages.auth_page import AuthPage                  
 from pages.recovery_password_page import RecoveryPasswordPage
 from utils.urls import Urls
