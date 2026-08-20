@@ -1,0 +1,6 @@
+Открываю страницу: https://qa-stellarburgers.education-services.ru/forgot-password
+
+=== Test Environment Cleanup ===
+All tests completed
+================================
+
