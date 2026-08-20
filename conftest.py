@@ -1,14 +1,9 @@
+import pytest
+import allure
 import sys
 from pathlib import Path
 
-
-project_root = str(Path(__file__).resolve().parent)
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
-
-import pytest
-import allure
+sys.path.insert(0, str(Path(__file__).parent))
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -16,10 +11,11 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.edge.options import Options as EdgeOptions
 from selenium.webdriver.chrome.service import Service
 
-
 from utils.urls import BASE_URL
 from config import BROWSER, HEADLESS, WINDOW_WIDTH, WINDOW_HEIGHT, DEFAULT_TIMEOUT
 from helpers import DataGenerator
+
+SCREENSHOTS_DIR = Path(__file__).parent / "screenshots"
 
 
 @pytest.fixture(scope="function")
@@ -92,9 +88,7 @@ def pytest_runtest_makereport(item, call):
                         attachment_type=allure.attachment_type.PNG
                     )
 
-                    screenshots_dir = Path(__file__).parent / "screenshots"
-                    screenshots_dir.mkdir(exist_ok=True)
-                    screenshot_path = screenshots_dir / f"{item.name}_{rep.when}.png"
+                    screenshot_path = SCREENSHOTS_DIR / f"{item.name}_{rep.when}.png"
                     driver.save_screenshot(str(screenshot_path))
                 except Exception as e:
                     print(f"Failed to take screenshot: {e}")
@@ -109,8 +103,7 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_environment():
-    screenshots_dir = Path(__file__).parent / "screenshots"
-    screenshots_dir.mkdir(exist_ok=True)
+    SCREENSHOTS_DIR.mkdir(exist_ok=True)
 
     allure_results_dir = Path(__file__).parent / "allure-results"
     allure_results_dir.mkdir(exist_ok=True)
@@ -119,7 +112,7 @@ def setup_test_environment():
     print(f"Browser: {BROWSER}")
     print(f"Headless: {HEADLESS}")
     print(f"Base URL: {BASE_URL}")
-    print(f"Screenshots dir: {screenshots_dir}")
+    print(f"Screenshots dir: {SCREENSHOTS_DIR}")
     print("===============================\n")
 
     yield
@@ -127,4 +120,3 @@ def setup_test_environment():
     print("\n=== Test Environment Cleanup ===")
     print("All tests completed")
     print("================================\n")
-
